@@ -13,8 +13,23 @@ const MathCombinationsVisualizer = () => {
   const [results, setResults] = useState([]);
   const [combinations, setCombinations] = useState([]);
   const [hoveredValue, setHoveredValue] = useState(null);
+  const [hoveredCombinations, setHoveredCombinations] = useState([]);
   const [stats, setStats] = useState({ min: 0, q1: 0, median: 0, q3: 0, max: 0 });
   const [jitterPositions, setJitterPositions] = useState({});
+  
+  // Colors for distinguishing combinations with the same result
+  const combinationColors = [
+    '#e74c3c', // red
+    '#3498db', // blue
+    '#2ecc71', // green
+    '#f39c12', // orange
+    '#9b59b6', // purple
+    '#1abc9c', // teal
+    '#d35400', // dark orange
+    '#2980b9', // dark blue
+    '#27ae60', // dark green
+    '#8e44ad'  // dark purple
+  ];
 
   // Calculate combinations of all lists
   useEffect(() => {
@@ -180,13 +195,43 @@ const MathCombinationsVisualizer = () => {
   const isHighlighted = (listId, value) => {
     if (hoveredValue === null) return false;
     
+    // Find the combination index for this list value
+    for (let i = 0; i < hoveredCombinations.length; i++) {
+      if (hoveredCombinations[i].combination[listId] === value) {
+        return i + 1; // Return index+1 (1-based) so we can use it for styling
+      }
+    }
+    
+    return false;
+  };
+
+  // Handle hover on a dot
+  const handleDotHover = (result) => {
+    setHoveredValue(result);
+    
     // Find all combinations that produce this value
     const matchingCombinations = results.filter(item => 
-      Math.abs(item.result - hoveredValue) < 0.001 // Using small epsilon for floating point comparison
+      Math.abs(item.result - result) < 0.001 // Using small epsilon for floating point comparison
     );
     
-    // Check if this value is used in any of these combinations
-    return matchingCombinations.some(item => item.combination[listId] === value);
+    setHoveredCombinations(matchingCombinations);
+  };
+
+  // Get color for a combination
+  const getCombinationColor = (combinationKey) => {
+    if (hoveredValue === null) return '';
+    
+    // Find index of this combination in hoveredCombinations
+    const index = hoveredCombinations.findIndex(item => 
+      JSON.stringify(item.combination) === combinationKey
+    );
+    
+    // If found, return the color
+    if (index >= 0) {
+      return combinationColors[index % combinationColors.length];
+    }
+    
+    return '';
   };
 
   return (
@@ -218,14 +263,18 @@ const MathCombinationsVisualizer = () => {
                 placeholder="Enter comma-separated values"
               />
               <div className="list-values">
-                {list.values.map((value, idx) => (
-                  <span 
-                    key={idx}
-                    className={`value-badge ${isHighlighted(list.id, value) ? 'highlighted' : ''}`}
-                  >
-                    {value}
-                  </span>
-                ))}
+                {list.values.map((value, idx) => {
+                  const highlightIndex = isHighlighted(list.id, value);
+                  return (
+                    <span 
+                      key={idx}
+                      className={`value-badge ${highlightIndex ? 'highlighted' : ''}`}
+                      style={highlightIndex ? { backgroundColor: combinationColors[(highlightIndex - 1) % combinationColors.length] } : {}}
+                    >
+                      {value}
+                    </span>
+                  );
+                })}
               </div>
             </div>
           ))}
@@ -318,25 +367,30 @@ const MathCombinationsVisualizer = () => {
             
             {/* Scatter plot */}
             <div className="scatter-plot">
-
-{results.map((item, idx) => {
-  const key = JSON.stringify(item.combination);
-  const jitter = jitterPositions[key] || 50;
-  
-  return (
-    <div
-      key={key}
-      className={`dot ${Math.abs(item.result - hoveredValue) < 0.001 ? 'highlighted' : ''}`}
-      style={{
-        bottom: `${scale(item.result, stats)}%`,
-        left: `${jitter}%`
-      }}
-      onMouseEnter={() => setHoveredValue(item.result)}
-      onMouseLeave={() => setHoveredValue(null)}
-      title={`Result: ${item.result.toFixed(2)}`}
-    ></div>
-  );
-})}
+              {results.map((item, idx) => {
+                const key = JSON.stringify(item.combination);
+                const jitter = jitterPositions[key] || 50;
+                const isHighlighted = hoveredValue !== null && Math.abs(item.result - hoveredValue) < 0.001;
+                const combinationColor = isHighlighted ? getCombinationColor(key) : '';
+                
+                return (
+                  <div
+                    key={key}
+                    className={`dot ${isHighlighted ? 'highlighted' : ''}`}
+                    style={{
+                      bottom: `${scale(item.result, stats)}%`,
+                      left: `${jitter}%`,
+                      backgroundColor: combinationColor || (isHighlighted ? combinationColors[0] : '#3498db')
+                    }}
+                    onMouseEnter={() => handleDotHover(item.result)}
+                    onMouseLeave={() => {
+                      setHoveredValue(null);
+                      setHoveredCombinations([]);
+                    }}
+                    title={`Result: ${item.result.toFixed(2)}`}
+                  ></div>
+                );
+              })}
             </div>
           </div>
         ) : (
@@ -347,27 +401,26 @@ const MathCombinationsVisualizer = () => {
         
         {/* Hover details */}
         {hoveredValue !== null && (
-  <div className="hover-details">
-    <h3>Combinations producing {hoveredValue.toFixed(2)}:</h3>
-    
-    {results.filter(item => Math.abs(item.result - hoveredValue) < 0.001)
-      .map((item, index) => (
-        <div key={index} className="combination-container">
-          <div className="combinations-grid">
-            {Object.entries(item.combination).map(([listId, value]) => (
-              <div key={listId} className="combination-item">
-                <span className="list-id">{listId}:</span>
-                <span>{value}</span>
+          <div className="hover-details">
+            <h3>Combinations producing {hoveredValue.toFixed(2)}:</h3>
+            
+            {hoveredCombinations.map((item, index) => (
+              <div key={index} className="combination-container">
+                <div className="combinations-grid" style={{ borderLeft: `4px solid ${combinationColors[index % combinationColors.length]}` }}>
+                  {Object.entries(item.combination).map(([listId, value]) => (
+                    <div key={listId} className="combination-item">
+                      <span className="list-id">{listId}:</span>
+                      <span>{value}</span>
+                    </div>
+                  ))}
+                </div>
+                {index < hoveredCombinations.length - 1 && 
+                  <div className="combination-divider"></div>
+                }
               </div>
             ))}
           </div>
-          {index < results.filter(item => Math.abs(item.result - hoveredValue) < 0.001).length - 1 && 
-            <div className="combination-divider"></div>
-          }
-        </div>
-      ))}
-  </div>
-)}
+        )}
       </div>
     </div>
   );
