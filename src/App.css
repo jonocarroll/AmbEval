@@ -268,3 +268,27 @@ h2 {
   background-color: #ddd;
   margin: 10px 0;
 }
+
+/* Add this to your App.css file */
+.results-container {
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+}
+
+.visualization-wrapper {
+  width: 50%;
+}
+
+.hover-details, .hover-details-placeholder {
+  width: 50%;
+  height: auto;
+  margin-top: 0;
+}
+
+.hover-details {
+  width: 50%;
+  height: 400px;
+  margin-top: 0;
+  overflow-y: auto; /* Add scrolling for many combinations */
+}
