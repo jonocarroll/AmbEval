@@ -12,7 +12,7 @@ const MathCombinationsVisualizer = () => {
   const [formula, setFormula] = useState('a * b');
   const [results, setResults] = useState([]);
   const [combinations, setCombinations] = useState([]);
-  const [hoveredResult, setHoveredResult] = useState(null);
+  const [hoveredValue, setHoveredValue] = useState(null);
   const [stats, setStats] = useState({ min: 0, q1: 0, median: 0, q3: 0, max: 0 });
   const [jitterPositions, setJitterPositions] = useState({});
 
@@ -178,8 +178,15 @@ const MathCombinationsVisualizer = () => {
 
   // Function to determine if a value should be highlighted
   const isHighlighted = (listId, value) => {
-    if (!hoveredResult) return false;
-    return hoveredResult.combination[listId] === value;
+    if (hoveredValue === null) return false;
+    
+    // Find all combinations that produce this value
+    const matchingCombinations = results.filter(item => 
+      Math.abs(item.result - hoveredValue) < 0.001 // Using small epsilon for floating point comparison
+    );
+    
+    // Check if this value is used in any of these combinations
+    return matchingCombinations.some(item => item.combination[listId] === value);
   };
 
   return (
@@ -311,20 +318,21 @@ const MathCombinationsVisualizer = () => {
             
             {/* Scatter plot */}
             <div className="scatter-plot">
-            {results.map((item, idx) => {
+
+{results.map((item, idx) => {
   const key = JSON.stringify(item.combination);
-  const jitter = jitterPositions[key] || 50; // Fallback to center if no jitter
+  const jitter = jitterPositions[key] || 50;
   
   return (
     <div
       key={key}
-      className={`dot ${hoveredResult === item ? 'highlighted' : ''}`}
+      className={`dot ${Math.abs(item.result - hoveredValue) < 0.001 ? 'highlighted' : ''}`}
       style={{
         bottom: `${scale(item.result, stats)}%`,
         left: `${jitter}%`
       }}
-      onMouseEnter={() => setHoveredResult(item)}
-      onMouseLeave={() => setHoveredResult(null)}
+      onMouseEnter={() => setHoveredValue(item.result)}
+      onMouseLeave={() => setHoveredValue(null)}
       title={`Result: ${item.result.toFixed(2)}`}
     ></div>
   );
@@ -338,23 +346,28 @@ const MathCombinationsVisualizer = () => {
         )}
         
         {/* Hover details */}
-        {hoveredResult && (
-          <div className="hover-details">
-            <h3>Selected Combination:</h3>
-            <div className="combinations-grid">
-              {Object.entries(hoveredResult.combination).map(([listId, value]) => (
-                <div key={listId} className="combination-item">
-                  <span className="list-id">{listId}:</span>
-                  <span>{value}</span>
-                </div>
-              ))}
-            </div>
-            <div className="result-value">
-              <span className="result-label">Result:</span>
-              <span>{hoveredResult.result.toFixed(2)}</span>
-            </div>
+        {hoveredValue !== null && (
+  <div className="hover-details">
+    <h3>Combinations producing {hoveredValue.toFixed(2)}:</h3>
+    
+    {results.filter(item => Math.abs(item.result - hoveredValue) < 0.001)
+      .map((item, index) => (
+        <div key={index} className="combination-container">
+          <div className="combinations-grid">
+            {Object.entries(item.combination).map(([listId, value]) => (
+              <div key={listId} className="combination-item">
+                <span className="list-id">{listId}:</span>
+                <span>{value}</span>
+              </div>
+            ))}
           </div>
-        )}
+          {index < results.filter(item => Math.abs(item.result - hoveredValue) < 0.001).length - 1 && 
+            <div className="combination-divider"></div>
+          }
+        </div>
+      ))}
+  </div>
+)}
       </div>
     </div>
   );

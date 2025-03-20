@@ -231,3 +231,32 @@ h2 {
   font-weight: bold;
   margin-right: 5px;
 }
+
+.combination-container {
+  margin-bottom: 10px;
+}
+
+.combination-divider {
+  height: 1px;
+  background-color: #ddd;
+  margin: 10px 0;
+}
+
+/* You can add these classes to create different colored highlights */
+.dot.highlighted {
+  background-color: #e74c3c;
+  width: 14px;
+  height: 14px;
+  z-index: 10;
+}
+
+/* For multiple combinations, you might want to refine the hover details */
+.hover-details {
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 15px;
+  margin-top: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+}
