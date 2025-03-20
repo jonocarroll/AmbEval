@@ -82,7 +82,8 @@ const MathCombinationsVisualizer = () => {
         const key = JSON.stringify(item.combination);
         // Only generate new jitter if it doesn't exist yet
         if (!jitterPositions[key]) {
-          newJitterPositions[key] = (Math.random() * 70) + 15; // 15-85% width
+          // Generate jitter positions between 15% and 85% of the width
+          newJitterPositions[key] = (Math.random() * 70) + 15;
         }
       });
     
@@ -310,87 +311,98 @@ const MathCombinationsVisualizer = () => {
         <h2>Results Visualization</h2>
         
         {results.length > 0 ? (
-          <div className="visualization">
-            {/* Boxplot */}
-            <div className="boxplot">
-              {/* Min, Max, Quartiles */}
-              <div className="stat-line min" style={{bottom: `${scale(stats.min, stats)}%`}}></div>
-              <div className="stat-line q1" style={{bottom: `${scale(stats.q1, stats)}%`}}></div>
-              <div className="stat-line median" style={{bottom: `${scale(stats.median, stats)}%`}}></div>
-              <div className="stat-line q3" style={{bottom: `${scale(stats.q3, stats)}%`}}></div>
-              <div className="stat-line max" style={{bottom: `${scale(stats.max, stats)}%`}}></div>
-              
-              {/* Box */}
-              <div 
-                className="box"
-                style={{
-                  bottom: `${scale(stats.q1, stats)}%`,
-                  height: `${scale(stats.q3, stats) - scale(stats.q1, stats)}%`
-                }}
-              ></div>
-              
-              {/* Median line */}
-              <div 
-                className="median-line"
-                style={{
-                  bottom: `${scale(stats.median, stats)}%`
-                }}
-              ></div>
-              
-              {/* Whiskers */}
-              <div 
-                className="whisker"
-                style={{
-                  bottom: `${scale(stats.min, stats)}%`,
-                  height: `${scale(stats.q1, stats) - scale(stats.min, stats)}%`
-                }}
-              ></div>
-              <div 
-                className="whisker"
-                style={{
-                  bottom: `${scale(stats.q3, stats)}%`,
-                  height: `${scale(stats.max, stats) - scale(stats.q3, stats)}%`
-                }}
-              ></div>
-              
-              {/* Labels */}
-              <div className="stat-label min-label" style={{bottom: `${scale(stats.min, stats)}%`}}>
-                {stats.min.toFixed(1)}
+          <div className="visualization-container">
+            {/* Value labels on the left */}
+            <div className="value-labels">
+              <div className="stat-label max-label" style={{ top: `${100 - scale(stats.max, stats)}%` }}>
+                {stats.max.toFixed(1)}
               </div>
-              <div className="stat-label median-label" style={{bottom: `${scale(stats.median, stats)}%`}}>
+              <div className="stat-label q3-label" style={{ top: `${100 - scale(stats.q3, stats)}%` }}>
+                {stats.q3.toFixed(1)}
+              </div>
+              <div className="stat-label median-label" style={{ top: `${100 - scale(stats.median, stats)}%` }}>
                 {stats.median.toFixed(1)}
               </div>
-              <div className="stat-label max-label" style={{bottom: `${scale(stats.max, stats)}%`}}>
-                {stats.max.toFixed(1)}
+              <div className="stat-label q1-label" style={{ top: `${100 - scale(stats.q1, stats)}%` }}>
+                {stats.q1.toFixed(1)}
+              </div>
+              <div className="stat-label min-label" style={{ top: `${100 - scale(stats.min, stats)}%` }}>
+                {stats.min.toFixed(1)}
               </div>
             </div>
             
-            {/* Scatter plot */}
-            <div className="scatter-plot">
-              {results.map((item, idx) => {
-                const key = JSON.stringify(item.combination);
-                const jitter = jitterPositions[key] || 50;
-                const isHighlighted = hoveredValue !== null && Math.abs(item.result - hoveredValue) < 0.001;
-                const combinationColor = isHighlighted ? getCombinationColor(key) : '';
+            {/* Combined visualization area */}
+            <div className="visualization">
+              {/* Boxplot */}
+              <div className="boxplot">
+                {/* Min, Max, Quartiles */}
+                <div className="stat-line min" style={{ top: `${100 - scale(stats.min, stats)}%` }}></div>
+                <div className="stat-line q1" style={{ top: `${100 - scale(stats.q1, stats)}%` }}></div>
+                <div className="stat-line median" style={{ top: `${100 - scale(stats.median, stats)}%` }}></div>
+                <div className="stat-line q3" style={{ top: `${100 - scale(stats.q3, stats)}%` }}></div>
+                <div className="stat-line max" style={{ top: `${100 - scale(stats.max, stats)}%` }}></div>
                 
-                return (
-                  <div
-                    key={key}
-                    className={`dot ${isHighlighted ? 'highlighted' : ''}`}
-                    style={{
-                      bottom: `${scale(item.result, stats)}%`,
-                      left: `${jitter}%`,
-                      backgroundColor: combinationColor || (isHighlighted ? combinationColors[0] : '#3498db')
-                    }}
-                    onMouseEnter={() => handleDotHover(item.result)}
-                    onMouseLeave={() => {
-                      setHoveredValue(null);
-                      setHoveredCombinations([]);
-                    }}
-                    title={`Result: ${item.result.toFixed(2)}`}
-                  ></div>
-                );
-              })}
+                {/* Box */}
+                <div 
+                  className="box"
+                  style={{
+                    top: `${100 - scale(stats.q3, stats)}%`,
+                    height: `${scale(stats.q3, stats) - scale(stats.q1, stats)}%`
+                  }}
+                ></div>
+                
+                {/* Median line */}
+                <div 
+                  className="median-line"
+                  style={{
+                    top: `${100 - scale(stats.median, stats)}%`
+                  }}
+                ></div>
+                
+                {/* Whiskers */}
+                <div 
+                  className="whisker"
+                  style={{
+                    top: `${100 - scale(stats.q1, stats)}%`,
+                    height: `${scale(stats.q1, stats) - scale(stats.min, stats)}%`
+                  }}
+                ></div>
+                <div 
+                  className="whisker"
+                  style={{
+                    top: `${100 - scale(stats.max, stats)}%`,
+                    height: `${scale(stats.max, stats) - scale(stats.q3, stats)}%`
+                  }}
+                ></div>
+              </div>
+              
+              {/* Scatter plot overlaid on the boxplot */}
+              <div className="scatter-plot">
+                {results.map((item, idx) => {
+                  const key = JSON.stringify(item.combination);
+                  const jitter = jitterPositions[key] || 50;
+                  const isHighlighted = hoveredValue !== null && Math.abs(item.result - hoveredValue) < 0.001;
+                  const combinationColor = isHighlighted ? getCombinationColor(key) : '';
+                  
+                  return (
+                    <div
+                      key={key}
+                      className={`dot ${isHighlighted ? 'highlighted' : ''}`}
+                      style={{
+                        top: `${100 - scale(item.result, stats)}%`,
+                        left: `${jitter}%`,
+                        backgroundColor: combinationColor || (isHighlighted ? combinationColors[0] : '#666666')
+                      }}
+                      onMouseEnter={() => handleDotHover(item.result)}
+                      onMouseLeave={() => {
+                        setHoveredValue(null);
+                        setHoveredCombinations([]);
+                      }}
+                      title={`Result: ${item.result.toFixed(2)}`}
+                    ></div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         ) : (
